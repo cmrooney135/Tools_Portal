@@ -9,6 +9,7 @@ DATA_DIR = Path("bug_data")
 BUGS_FILE = DATA_DIR / "bugs.json"
 SUGGESTIONS_FILE = DATA_DIR / "suggestions.json"
 SCREENSHOTS_DIR = DATA_DIR / "screenshots"
+FILES_DIR = DATA_DIR / "files"
 
 # ✅ Change this to your own password!
 ADMIN_PASSWORD = "iamcarol"
@@ -25,6 +26,7 @@ PROJECTS = [
 # Ensure directories exist
 DATA_DIR.mkdir(exist_ok=True)
 SCREENSHOTS_DIR.mkdir(exist_ok=True)
+FILES_DIR.mkdir(exist_ok=True)
 
 # --- Helper Functions ---
 def load_bugs():
@@ -54,6 +56,19 @@ def save_screenshots(uploaded_files, item_id, prefix="bug"):
         ext = uploaded_file.name.split(".")[-1]
         filename = f"{prefix}_{item_id}_{i+1}.{ext}"
         filepath = SCREENSHOTS_DIR / filename
+        with open(filepath, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        paths.append(str(filepath))
+    return paths
+
+
+def save_supporting_files(uploaded_files, item_id, prefix="bug"):
+    """Save multiple uploaded supporting files and return a list of file paths."""
+    paths = []
+    for i, uploaded_file in enumerate(uploaded_files):
+        ext = uploaded_file.name.split(".")[-1]
+        filename = f"{prefix}_{item_id}_file_{i+1}.{ext}"
+        filepath = FILES_DIR / filename
         with open(filepath, "wb") as f:
             f.write(uploaded_file.getbuffer())
         paths.append(str(filepath))
@@ -124,6 +139,12 @@ if mode == "📫 Submit Feedback":
                 accept_multiple_files=True,   
                 key="bug_screenshot",
             )
+            supporting_files = st.file_uploader(
+                "Upload Supporting Files (optional)",
+                type=["pdf", "doc", "docx", "xls", "xlsx", "csv", "txt", "log", "json", "xml", "zip", "html", "py", "sql", "md", "pptx"],
+                accept_multiple_files=True,
+                key="bug_files",
+            )
 
 
             submitted = st.form_submit_button("🚀 Submit Bug Report")
@@ -139,6 +160,10 @@ if mode == "📫 Submit Feedback":
                     if screenshot:  # screenshot is now a list
                         screenshot_paths = save_screenshots(screenshot, bug_id)
 
+                    file_paths = []
+                    if supporting_files:
+                        file_paths = save_supporting_files(supporting_files, bug_id)
+
                     new_bug = {
                         "id": bug_id,
                         "project": project,
@@ -147,7 +172,8 @@ if mode == "📫 Submit Feedback":
                         "severity": severity,
                         "category": category, 
                         "description": description,
-                        "screenshots": screenshot_paths,  # ✅ changed from "screenshot" to "screenshots" (list)
+                        "screenshots": screenshot_paths,
+                        "files": file_paths,
                         "status": "Open",
                         "submitted_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     }
@@ -205,6 +231,12 @@ if mode == "📫 Submit Feedback":
                 accept_multiple_files=True,
                 key="sug_screenshot",
             )
+            supporting_files = st.file_uploader(
+                "Upload Supporting Files (optional)",
+                type=["pdf", "doc", "docx", "xls", "xlsx", "csv", "txt", "log", "json", "xml", "zip", "html", "py", "sql", "md", "pptx"],
+                accept_multiple_files=True,
+                key="sug_files",
+            )
 
             submitted = st.form_submit_button("💡 Submit Suggestion")
 
@@ -219,6 +251,10 @@ if mode == "📫 Submit Feedback":
                     if screenshot:
                         screenshot_paths = save_screenshots(screenshot, suggestion_id, prefix="sug")
 
+                    file_paths = []
+                    if supporting_files:
+                        file_paths = save_supporting_files(supporting_files, suggestion_id, prefix="sug")
+
                     new_suggestion = {
                         "id": suggestion_id,
                         "project": project,
@@ -228,6 +264,7 @@ if mode == "📫 Submit Feedback":
                         "type": suggestion_type,
                         "details": details,
                         "screenshots": screenshot_paths,
+                        "files": file_paths,
                         "status": "New",
                         "admin_notes": "",
                         "submitted_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -351,6 +388,19 @@ elif mode == "🔒 Admin Panel":
                         else:
                             st.markdown("*No screenshots attached.*")
 
+                        files = bug.get("files", [])
+                        if files:
+                            st.markdown("**Supporting Files:**")
+                            for file_path in files:
+                                if os.path.exists(file_path):
+                                    with open(file_path, "rb") as f:
+                                        st.download_button(
+                                            label=f"📎 {os.path.basename(file_path)}",
+                                            data=f,
+                                            file_name=os.path.basename(file_path),
+                                            key=f"dl_bug_{bug['id']}_{os.path.basename(file_path)}",
+                                        )
+
 
                     new_status = st.selectbox(
                         "Update Status",
@@ -377,6 +427,9 @@ elif mode == "🔒 Admin Panel":
                                 for img_path in screenshots:
                                     if os.path.exists(img_path):
                                         os.remove(img_path)
+                                for file_path in bug.get("files", []):
+                                    if os.path.exists(file_path):
+                                        os.remove(file_path)
 
                                 # Remove bug from list and save
                                 bugs.remove(bug)
@@ -465,6 +518,19 @@ elif mode == "🔒 Admin Panel":
                     else:
                         st.markdown("*No screenshots attached.*")
 
+                    files = sug.get("files", [])
+                    if files:
+                        st.markdown("**Supporting Files:**")
+                        for file_path in files:
+                            if os.path.exists(file_path):
+                                with open(file_path, "rb") as f:
+                                    st.download_button(
+                                        label=f"📎 {os.path.basename(file_path)}",
+                                        data=f,
+                                        file_name=os.path.basename(file_path),
+                                        key=f"dl_sug_{sug['id']}_{os.path.basename(file_path)}",
+                                    )
+
                     st.markdown("---")
 
                     new_status = st.selectbox(
@@ -512,6 +578,9 @@ elif mode == "🔒 Admin Panel":
                                 for img_path in sug.get("screenshots", []):
                                     if os.path.exists(img_path):
                                         os.remove(img_path)
+                                for file_path in sug.get("files", []):
+                                    if os.path.exists(file_path):
+                                        os.remove(file_path)
                                 suggestions.remove(sug)
                                 save_suggestions(suggestions)
                                 st.success(f"Suggestion #{sug['id']} deleted!")
