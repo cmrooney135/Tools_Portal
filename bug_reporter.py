@@ -3,6 +3,9 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+import subprocess
+
+
 
 # --- Configuration ---
 DATA_DIR = Path("bug_data")
@@ -11,8 +14,7 @@ SUGGESTIONS_FILE = DATA_DIR / "suggestions.json"
 SCREENSHOTS_DIR = DATA_DIR / "screenshots"
 FILES_DIR = DATA_DIR / "files"
 
-# ✅ Change this to your own password!
-ADMIN_PASSWORD = "iamcarol"
+ADMIN_PASSWORD = st.secrets["general"]["admin_password"]
 
 # ✅ Add/remove your projects here!
 PROJECTS = [
@@ -36,8 +38,24 @@ def load_bugs():
     return []
 
 def save_bugs(bugs):
+    """Save bugs to the JSON file and push changes to the remote repository."""
     with open(BUGS_FILE, "w") as f:
         json.dump(bugs, f, indent=2)
+
+    # Automate Git commands
+    try:
+        # Stage the changes
+        subprocess.run(["git", "add", str(BUGS_FILE)], check=True, cwd=DATA_DIR)
+
+        # Commit the changes
+        commit_message = f"Bug report updated at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        subprocess.run(["git", "commit", "-m", commit_message], check=True, cwd=DATA_DIR)
+
+        # Push the changes to the remote repository
+        subprocess.run(["git", "push", "origin", "main"], check=True, cwd=DATA_DIR)
+    except subprocess.CalledProcessError as e:
+        st.error(f"An error occurred while pushing changes to the repository: {e}")
+
 
 def load_suggestions():
     if SUGGESTIONS_FILE.exists():

@@ -1,0 +1,15 @@
+[
+  {
+    "id": 1,
+    "project": "FTP Dashboard",
+    "reporter": "jj",
+    "title": "typo",
+    "severity": "\ud83d\udfe2 Low",
+    "category": "UI/UX",
+    "description": "there are spelling errors in your document ",
+    "screenshots": [],
+    "files": [],
+    "status": "Open",
+    "submitted_at": "2026-04-16 10:15:52"
+  }
+]
