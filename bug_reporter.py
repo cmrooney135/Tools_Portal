@@ -45,14 +45,14 @@ def save_bugs(bugs):
     # Automate Git commands
     try:
         # Stage the changes
-        subprocess.run(["git", "add", str(BUGS_FILE)], check=True, cwd=DATA_DIR)
+        subprocess.run(["git", "add", str(BUGS_FILE)], check=True)
 
         # Commit the changes
         commit_message = f"Bug report updated at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        subprocess.run(["git", "commit", "-m", commit_message], check=True, cwd=DATA_DIR)
+        subprocess.run(["git", "commit", "-m", commit_message], check=True)
 
         # Push the changes to the remote repository
-        subprocess.run(["git", "push", "origin", "main"], check=True, cwd=DATA_DIR)
+        subprocess.run(["git", "push", "origin", "main"], check=True)
     except subprocess.CalledProcessError as e:
         st.error(f"An error occurred while pushing changes to the repository: {e}")
 
