@@ -14,7 +14,7 @@ SUGGESTIONS_FILE = DATA_DIR / "suggestions.json"
 SCREENSHOTS_DIR = DATA_DIR / "screenshots"
 FILES_DIR = DATA_DIR / "files"
 
-ADMIN_PASSWORD = st.secrets["general"]["admin_password"]
+ADMIN_PASSWORD = st.secrets["admin_password"]
 
 # ✅ Add/remove your projects here!
 PROJECTS = [
